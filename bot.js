@@ -6,8 +6,11 @@ const Discord = require('discord.js')
 const client = new Discord.Client()
 
 const dataFile = 'data.txt'
-const token = 'MzE4MTk4MTA2NzcwMzc0NjU4.DAu4sA.-YZYc9GgHMCo09leIAs4D761fTY'
-const devId = 313850299838365698
+var token = ''		// thanks random guy who found my github and told me to remove it
+(() => {
+	token = fs.readFileSync('token')
+})()
+const devId = '313850299838365698'
 
 var games = []
 
@@ -36,11 +39,15 @@ function load() {
 
 	const gamesData = data.games
 	for (var key in gamesData) {
-		const gameData = gamesgameData
+		const gameData = gamesData[key]
 		const user = client.users.get(key)		// key is user id
 		const game = new Game(user)
 
 		game.xp = gameData.xp
+
+		const msg = user.dmChannel.messages.get(gameData.logger.msgId)
+		game.logger = new Log(game, msg)
+
 		if (game.mob != undefined) {
 			game.mob = new Mob(0, 0)
 			game.mob.maxHP = gameData.mob.maxHP
@@ -49,22 +56,20 @@ function load() {
 		} else {
 			game.spawnMob()
 		}
-		game.logger = new Log(dm(user, gameData.logger.contents))
-
+		
 		games.push(game)
 	}
+	console.log('Loaded data from disk')
 }
 
 function save() {
 	var data = {
 		games: {}
 	}
-	for (var game in games) {
+	for (var userId in games) {		// userId is key
+		const game = games[userId]
 		var gameData = {
 			xp: game.xp,
-			logger: {
-				contents: game.logger.contents
-			}
 		}
 		if (game.mob != undefined) {
 			gameData.mob = {
@@ -73,13 +78,25 @@ function save() {
 				xp: game.mob.xp
 			}
 		}
+		if (game.logger != undefined) {
+			gameData.logger = {
+				msgId: game.logger.msg.id,
+				contents: game.logger.contents
+			}
+		}
 		data.games[game.user.id] = gameData
 	}
 	fs.writeFileSync(dataFile, JSON.stringify(data))
+	console.log('Saved data to disk')
 }
 
+var cleaned = false
 function cleanup() {
-	save()
+	if (!cleaned) {
+		save()
+		cleaned = true	
+	}
+	process.exit()
 }
 
 class Mob {
@@ -104,13 +121,21 @@ class Mob {
 }
 
 class Log {
-	constructor(promise) {
-		this.ready = false		// necessary because logs may be made before promise is resolved
-		promise.then((message) => {
-			this.msg = message
-			this.contents = message.content.split('\n')
+	constructor(game, msg) {
+		if (msg instanceof Promise) {
+			this.ready = false		// necessary because logs may be made before promise is resolved
+			msg.then((message) => {
+				this.msg = message
+				this.contents = message.content.split('\n')
+				this.ready = true
+				game.ready = true
+			}).catch()
+		} else {
+			this.msg = msg
+			this.contents = msg.content.split('\n')
 			this.ready = true
-		}).catch()
+			game.ready = true
+		}
 	}
 
 	log(line) {
@@ -126,18 +151,20 @@ class Log {
 		}
 		const size = this.contents.length
 		const start = (size > 40 ? size - 40 : 0)
-		this.msg.edit(this.contents.slice(start, size).join('\n'))
+		this.contents = this.contents.slice(start, size)
+		this.msg.edit(this.contents.join('\n'))
 	}
 }
 
 class Game {
 	constructor(user) {
+		this.ready = false
 		this.user = user
 		this.xp = 0
 	}
 
 	init() {		// should only be run when new game is created, not when loading a game
-		this.logger = new Log(dm(this.user, 'Welcome to IdleRPG!'))
+		this.logger = new Log(this, dm(this.user, 'Welcome to IdleRPG!'))
 	}
 
 	log(msg) {
@@ -156,6 +183,9 @@ class Game {
 	}
 
 	tick() {
+		if (!this.ready) {
+			return
+		} 
 		if (!this.mob) {
 			this.mob = this.spawnMob()
 		}
@@ -173,8 +203,6 @@ class Game {
 }
 
 /********* runs on boot ***********/
-load()
-
 client.on('message', message => {
 	if (message.channel instanceof Discord.TextChannel) {
 		if (message.content.startsWith('.new')) {
@@ -183,23 +211,31 @@ client.on('message', message => {
 			if (message.author.dmChannel != null) {
 				message.author.deleteDM()
 			}
-		} 
+		} else if (message.content.startsWith('.yee')) {
+			console.log(client.users.get(devId))
+		}
 	}
 })
 
-setInterval(() => {
-	for (var key in games) {
-		const game = games[key]
-		game.tick()
-	}
-}, 2500)
+client.on('ready', () => {
+	load()
 
-setInterval(() => {
-	for (var key in games) {
-		const game = games[key]
-		game.logger.update()
-	}
-}, 2500)
+	setInterval(() => {
+		for (var key in games) {
+			const game = games[key]
+			game.tick()
+		}
+	}, 1000)
+
+	setInterval(() => {
+		for (var key in games) {
+			const game = games[key]
+			game.logger.update()
+		}
+	}, 2500)
+
+	client.user.setGame('IdleRPG Dev [4%]')
+})
 
 client.login(token)
 
