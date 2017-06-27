@@ -1,0 +1,57 @@
+>Items
+----Currency
+--------Tradeable/Untradeable
+----Equipment
+--------Degradable
+----Consumables
+--------Equipment Enhancement
+--------Buffs
+--------Healing/Mana Regen
+--------Teleportation
+----Quest
+--------Boss Drops
+--------Collected Items
+----Junk
+
+>Mechanics
+----Character Customization
+--------Gender/Race
+--------Clothing/Cosmetics
+----Movement
+--------Jumping
+----Leveling/Progression
+--------EXP
+--------Map Exploration/Quest Completion
+----Classes/Jobs
+--------Non-combat skills (gathering, processing, etc.)
+----Skills/Abilities
+--------?Character stat progression vs. Equipment progression
+--------Skill Trees
+--------Skill Points
+----Quests
+----Partying
+--------XP Leeching
+----Combat
+--------?Hack n Slash vs. Spell casting
+--------Health/mana/fury/other resources
+--------Monster design
+--------PvP
+--------Bossing
+--------Dungeons/Raids
+------------2/4 man, 6/8/12/20 man
+--------World-level/global cooperative events
+----Maps
+--------World Map
+----Metrics
+--------Time played
+--------Enemies killed, damage done, etc
+----MTX
+--------Cosmetics
+--------Stat-boosting items/equipment
+--------Tradeable Membership
+----Item Rarity
+--------?Fluid rarity (iLevels) vs. Set tiers (GW2)
+----Customization
+--------Key Shortcuts
+--------Graphics/Hardware
+--------UI
