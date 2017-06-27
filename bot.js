@@ -6,10 +6,7 @@ const Discord = require('discord.js')
 const client = new Discord.Client()
 
 const dataFile = 'data.txt'
-var token = ''		// thanks random guy who found my github and told me to remove it
-(() => {
-	token = fs.readFileSync('token')
-})()
+const token = fs.readFileSync('token').toString()	// thanks random guy who found my github and told me to remove it
 const devId = '313850299838365698'
 
 var games = []
