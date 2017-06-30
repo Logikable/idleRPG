@@ -9,7 +9,7 @@ const dataFile = 'data.txt'
 const token = fs.readFileSync('token').toString()	// thanks random guy who found my github and told me to remove it
 const devId = '313850299838365698'
 
-var games = []
+var games = {}
 
 // inclusive
 function randI(min, max) {
@@ -22,9 +22,9 @@ function dm(user, message) {
 }
 
 function newGame(user) {
-	const game = new Game(user)
-	game.init()
-	games.push(game)
+	const game = new Game()
+	game.newGame(user)
+	games[user.id] = game
 }
 
 function load() {
@@ -38,23 +38,11 @@ function load() {
 	for (var key in gamesData) {
 		const gameData = gamesData[key]
 		const user = client.users.get(key)		// key is user id
-		const game = new Game(user)
 
-		game.xp = gameData.xp
-
-		const msg = user.dmChannel.messages.get(gameData.logger.msgId)
-		game.logger = new Log(game, msg)
-
-		if (game.mob != undefined) {
-			game.mob = new Mob(0, 0)
-			game.mob.maxHP = gameData.mob.maxHP
-			game.mob.hp = gameData.mob.hp
-			game.mob.xp = gameData.mob.xp
-		} else {
-			game.spawnMob()
-		}
+		const game = new Game()
+		game.load(user, gameData)
 		
-		games.push(game)
+		games[key] = game
 	}
 	console.log('Loaded data from disk')
 }
@@ -65,23 +53,7 @@ function save() {
 	}
 	for (var userId in games) {		// userId is key
 		const game = games[userId]
-		var gameData = {
-			xp: game.xp,
-		}
-		if (game.mob != undefined) {
-			gameData.mob = {
-				maxHP: game.mob.maxHP,
-				hp: game.mob.hp,
-				xp: game.mob.xp
-			}
-		}
-		if (game.logger != undefined) {
-			gameData.logger = {
-				msgId: game.logger.msg.id,
-				contents: game.logger.contents
-			}
-		}
-		data.games[game.user.id] = gameData
+		data.games[userId] = game.save()
 	}
 	fs.writeFileSync(dataFile, JSON.stringify(data))
 	console.log('Saved data to disk')
@@ -118,34 +90,16 @@ class Mob {
 }
 
 class Log {
-	constructor(game, msg) {
-		if (msg instanceof Promise) {
-			this.ready = false		// necessary because logs may be made before promise is resolved
-			msg.then((message) => {
-				this.msg = message
-				this.contents = message.content.split('\n')
-				this.ready = true
-				game.ready = true
-			}).catch()
-		} else {
-			this.msg = msg
-			this.contents = msg.content.split('\n')
-			this.ready = true
-			game.ready = true
-		}
+	constructor(game, msg) {		// msg should not be a promise
+		this.msg = msg
+		this.contents = msg.content.split('\n')
 	}
 
 	log(line) {
-		if (!this.ready) {
-			return
-		}
 		this.contents.push(line)
 	}
 
 	update() {
-		if (!this.ready) {
-			return
-		}
 		const size = this.contents.length
 		const start = (size > 40 ? size - 40 : 0)
 		this.contents = this.contents.slice(start, size)
@@ -154,18 +108,67 @@ class Log {
 }
 
 class Game {
-	constructor(user) {
+	constructor() {
 		this.ready = false
-		this.user = user
-		this.xp = 0
 	}
 
-	init() {		// should only be run when new game is created, not when loading a game
-		this.logger = new Log(this, dm(this.user, 'Welcome to IdleRPG!'))
+	newGame(user) {
+		this.user = user
+		this.xp = 0
+		const dmPromise = dm(this.user, 'Welcome to IdleRPG!')
+		dmPromise.then((msg) => {
+			this.logger = new Log(this, msg)
+			this.ready = true
+		})
+	}
+
+	load(user, data) {
+		this.xp = data.xp
+
+		const msg = user.dmChannel.fetchMessage(data.logger.msgId)		// promise of a msg
+		msg.then((msg) => {
+			this.logger = new Log(this, msg)
+			this.logger.contents = data.logger.contents
+			this.ready = true
+		})
+
+		if (data.mob) {
+			this.mob = new Mob(0, 0)
+			this.mob.maxHP = data.mob.maxHP
+			this.mob.hp = data.mob.hp
+			this.mob.xp = data.mob.xp
+		}	
+	}
+
+	save() {
+		if (!this.ready) {		// don't try to save a game that hasn't loaded
+			return
+		}
+
+		var data = {}
+		data.xp = this.xp
+		data.logger = {
+			msgId: this.logger.msg.id,
+			contents: this.logger.contents
+		}
+		if (this.mob) {
+			data.mob = {
+				maxHP: this.mob.maxHP,
+				hp: this.mob.hp,
+				xp: this.mob.xp
+			}
+		}
+		return data		
 	}
 
 	log(msg) {
 		this.logger.log(msg)
+	}
+
+	tickLogger() {
+		if (this.ready) {
+			this.logger.update()
+		}
 	}
 
 	spawnMob() {
@@ -182,15 +185,16 @@ class Game {
 	tick() {
 		if (!this.ready) {
 			return
-		} 
+		}
 		if (!this.mob) {
 			this.mob = this.spawnMob()
 		}
 		var dmg = randI(2, 4)
+		const prevHp = this.mob.hp
 
 		this.mob.hurt(dmg,
 			(mob) => {
-				this.log('' + dmg + 'dmg [' + mob.hp + 'hp]')
+				this.log(dmg + 'dmg [' + prevHp + '->' + mob.hp + 'hp]')
 			},
 			(mob) => {
 				this.gainXp(mob.xp)
@@ -203,7 +207,10 @@ class Game {
 client.on('message', message => {
 	if (message.channel instanceof Discord.TextChannel) {
 		if (message.content.startsWith('.new')) {
-			newGame(message.author)
+			message.delete()
+			if (games[message.author.id] == undefined){
+				newGame(message.author)
+			}
 		} else if (message.content.startsWith('.del')) {
 			if (message.author.dmChannel != null) {
 				message.author.deleteDM()
@@ -227,11 +234,11 @@ client.on('ready', () => {
 	setInterval(() => {
 		for (var key in games) {
 			const game = games[key]
-			game.logger.update()
+			game.tickLogger()
 		}
 	}, 2500)
 
-	client.user.setGame('IdleRPG Dev [4%]')
+	client.user.setGame('IdleRPG Dev [5%]')
 })
 
 client.login(token)

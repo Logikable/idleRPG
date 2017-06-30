@@ -1,3 +1,3 @@
 # idleRPG
 
-### Progress: 4%
+### Progress: 5%

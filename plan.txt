@@ -4,7 +4,7 @@ x First iteration: 2pt
   x Able to create new game instance, auto spawn/kill mobs
 x Edit based system: 1pt
 x Saves data locally: 1pt
-> Uses the same message on reboot: 1pt
+x Uses the same message on reboot: 1pt
 > Command infrastructure: 2pt
   > Read for commands and call functions
   > Add basic commands
