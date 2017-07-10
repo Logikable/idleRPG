@@ -8,8 +8,17 @@ const client = new Discord.Client()
 const dataFile = 'data.txt'
 const token = fs.readFileSync('token').toString()	// thanks random guy who found my github and told me to remove it
 const devId = '313850299838365698'
+const prefix = '.'
 
 var games = {}
+
+const items = {
+	0: {
+		name: 'bag_of_gold',
+		dispName: 'Bag of Gold',
+		maxStack: '1'
+	}
+}
 
 // inclusive
 function randI(min, max) {
@@ -68,6 +77,24 @@ function cleanup() {
 	process.exit()
 }
 
+class Log {
+	constructor(game, msg) {		// msg should not be a promise
+		this.msg = msg
+		this.contents = msg.content.split('\n')
+	}
+
+	log(line) {
+		this.contents.push(line)
+	}
+
+	update() {
+		const size = this.contents.length
+		const start = (size > 40 ? size - 40 : 0)
+		this.contents = this.contents.slice(start, size)
+		this.msg.edit(this.contents.join('\n'))
+	}
+}
+
 class Mob {
 	constructor(minH, maxH) {
 		this.maxHP = randI(minH, maxH)
@@ -89,21 +116,14 @@ class Mob {
 	}
 }
 
-class Log {
-	constructor(game, msg) {		// msg should not be a promise
-		this.msg = msg
-		this.contents = msg.content.split('\n')
+class Inventory {
+	constructor(game) {
+		this.mu = 0
+		this.contents = {}
 	}
 
-	log(line) {
-		this.contents.push(line)
-	}
+	add(item) {
 
-	update() {
-		const size = this.contents.length
-		const start = (size > 40 ? size - 40 : 0)
-		this.contents = this.contents.slice(start, size)
-		this.msg.edit(this.contents.join('\n'))
 	}
 }
 
@@ -203,22 +223,62 @@ class Game {
 	}
 }
 
-/********* runs on boot ***********/
-client.on('message', message => {
-	if (message.channel instanceof Discord.TextChannel) {
-		if (message.content.startsWith('.new')) {
-			message.delete()
-			if (games[message.author.id] == undefined){
-				newGame(message.author)
-			}
-		} else if (message.content.startsWith('.del')) {
-			if (message.author.dmChannel != null) {
-				message.author.deleteDM()
-			}
-		} else if (message.content.startsWith('.yee')) {
-			console.log(client.users.get(devId))
+// commands
+function _new(message) {
+	if (games[message.author.id] == undefined){
+		newGame(message.author)
+	}
+}
+
+commands = {
+	dm: {
+		prefixed: {
+
+		},
+		unprefixed: {
+
+		}
+	},
+	text: {
+		prefixed: {
+			new: _new
+		},
+		unprefixed: {
+
 		}
 	}
+}
+
+/********* runs on boot ***********/
+
+function filterChannel(message, tree) {
+	if (message.channel instanceof Discord.TextChannel) {
+		return filterPrefix(message, tree.text)
+	} else if (message.channel instanceof Discord.DMChannel) {
+		return filterPrefix(message, tree.dm)
+	}
+	return false
+}
+
+function filterPrefix(message, tree) {
+	if (message.content.startsWith(prefix)) {
+		message.content = message.content.substring(prefix.length)
+		return filterCommand(message)
+	} else {
+		return filterCommand(message, tree.unprefixed)
+	}
+}
+
+function filterCommand(message, tree) {
+	if (message.content in tree) {
+		tree[message.content](message)
+		return true
+	}
+	return false
+}
+
+client.on('message', message => {
+	filterChannel(message, commands)
 })
 
 client.on('ready', () => {

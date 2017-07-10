@@ -1,52 +1,18 @@
-Basic functionality:
-x First iteration: 2pt
-  x Learning Discord.js
-  x Able to create new game instance, auto spawn/kill mobs
-x Edit based system: 1pt
-x Saves data locally: 1pt
-x Uses the same message on reboot: 1pt
-> Command infrastructure: 2pt
-  > Read for commands and call functions
-  > Add basic commands
-> Temporarily disable game: 1pt
-> Configure height (number of messages) of logger: 1pt
-> Track various metrics (global/local): 2pt
-  > Local metrics, accessible by player
-  > Global metrics, ensure stats are preserved over restarts
-> Multi-interfacing: 3pt
-  > Switching between interfaces
-  > Just seems hard tbh
+what does an engine need?
 
-Features:
-> Mobs are fixed (non-random): 1pt
-> Levelling up: 1pt
-> Inventory: 2pt
-  > Interface design
-  > Functionality & data storage
-> Stats (ability points): 1pt
-> Tiered equipment system (not iLevel): 2pt
-  > Display in inventory, equippable 
-  > Drop arbitrarily, provide stats
-> Drops: 2pt
-  > Infrastructure, ability to control rates
-  > Gold, misc/junk, equipment
-> Complex mob system: 4pt
-  > Random mini-bosses
-  > Arbitrary time between spawns
-  > Mobs can talk to player
-  > Mobs attack back
-> Basic equipment enhancement: 2pt
-  > Infrastructure: command, talking to inventory
-  > Star enhancing system - requires star bits, exponential chance, linear stats
-> Consumables: 2pt
-  > Infrastructure: command, talks to inventory & player instances
-  > Content (potions, xp buff, etc.)
-> Dungeons: 3pt
-  > Infrastructure - limit attempts, instancing, multi-interfacing
-  > Lots of Content - bosses, new mobs, drops
-> Quests: 2pt
-  > Infrastructure
-  > Content
-> Dailies (and hourlies, whatever): 2pt
-  > Infrastructure
-  > Content
+input:
+register commands
+react to commands
+
+output:
+add UIs
+switch between UIs
+
+backend:
+register new game instances
+run multiple game instances, game loops
+save and load data
+
+
+ideal command lifecycle:
+
