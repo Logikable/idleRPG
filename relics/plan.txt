@@ -1,0 +1,110 @@
+TODO:
+1. seamlessly be able to restart bot without breaking anything
+2. implement MultilogueUI, 
+3. develop actual rpg
+
+
+logging:
+3 severities: info, warning, error
+
+export void log(severity, message)
+
+------------
+
+commands:
+GuildChannel/Game (which UI)
+prefixed/unprefixed
+
+void registerCommand(string: command, array: tree, func: callback)
+export void registerGuildChannelCommand(string: command, func: callback)
+
+------------
+
+hooks:
+on 'ready'
+
+void registerHook(string: type, func: callback)
+export void registerReadyHook(func: callback)
+
+------------
+
+game related:
+
+export bool hasGame(user: user)
+export void addGame(user: user, game: game)
+
+-----------
+
+export Game class:
+  constructor(user: user, bool: load, dict: data)
+  dict save()
+  void tick()
+
+Data class:
+  constructor()
+  void load(dict: data)
+  dict save()
+  void update(array: path, var: value)
+  var get(array: path)
+
+export UI class:
+  constructor()
+  void togglePause()
+  bool isPaused()
+  array getDisplay()
+  void tick(int: currentTick)
+  void registerCommand(string: command, func: callback)
+
+export FlowingUI class:
+  constructor(data: data)
+  void addLine(string: line)
+  override array getDisplay()
+
+model InventoryUI class:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+what does an engine need?
+
+input:
+register commands
+react to commands
+
+output:
+add UIs
+switch between UIs
+
+backend:
+register new game instances
+run multiple game instances, game loops
+save and load data
+
+
+ideal command lifecycle:
+
+
+on launch:
+autoload -> for every entry
+new Game(user, data)
+
+on new:
+new Game(user)
+
+
+data = userID: {
+	guildID:
+	channelID:
+	messageID:
+}
+
+

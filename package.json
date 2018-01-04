@@ -9,7 +9,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "discord.js": "^11.1.0"
+    "bufferutil": "^3.0.2",
+    "colors": "^1.1.2",
+    "discord.js": "^11.1.0",
+    "libsodium-wrappers": "^0.5.2",
+    "lodash": "^4.17.4",
+    "opusscript": "0.0.3"
   },
   "devDependencies": {}
 }
