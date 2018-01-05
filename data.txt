@@ -1,1 +1,1 @@
-{"313850299838365698":{"user_id":"313850299838365698","iron_ore":3,"mining_timer":2,"mining_xp":6}}
+{"313850299838365698":{"userId":"313850299838365698","ironOre":346,"coalOre":354,"miningTimer":7,"miningXp":1754,"drill":"iron","mute":false}}
